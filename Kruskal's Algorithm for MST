@@ -1,0 +1,167 @@
+import sys
+import heapq
+import random
+import timeit
+import matplotlib.pyplot as plt
+import networkx as nx
+from collections import defaultdict
+
+def find(parent, i):
+    if parent[i] != i:
+        parent[i] = find(parent, parent[i])
+    return parent[i]
+
+def union(parent, rank, i, j):
+    root_i = find(parent, i)
+    root_j = find(parent, j)
+
+    if root_i != root_j:
+        if rank[root_i] < rank[root_j]:
+            parent[root_i] = root_j
+        elif rank[root_i] > rank[root_j]:
+            parent[root_j] = root_i
+        else:
+            parent[root_j] = root_i
+            rank[root_i] += 1
+
+def kruskal_mst(graph, distance,i):
+    vertices = len(graph)
+    parent = [i for i in range(vertices)]
+    rank = [0] * vertices
+
+    result = []
+    non_mst_edges = []
+    edges_with_weights = []
+
+    for u in range(vertices):
+        for v, weight in graph[u]:
+            edges_with_weights.append((u, v, weight))
+
+    edges_with_weights = sorted(edges_with_weights, key=lambda item: item[2])
+
+    e = 0
+    index = 0
+
+    while e < vertices - 1:
+        u, v, w = edges_with_weights[index]
+        index += 1
+        x = find(parent, u)
+        y = find(parent, v)
+
+        if x != y:
+            e += 1
+            result.append((u, v, w))
+            union(parent, rank, x, y)
+        else:
+            non_mst_edges.append((u, v, w))
+        
+    total_distance = 0
+    for u,v, weight in result:
+        total_distance += weight
+    distance.append(total_distance)
+    if i==0:
+        return
+    return result, non_mst_edges
+
+def visualize_graph(graph, mst_edges, non_mst_edges,distances,i):
+    G = nx.Graph()
+
+    for u in range(len(graph)):
+        for v, weight in graph[u]:
+            G.add_edge(u, v, weight=weight, color='black')
+
+    # Add MST edges with red color
+    for u, v, weight in mst_edges:
+        G[u][v]['color'] = 'red'
+
+    pos = nx.spring_layout(G)
+    plt.figure(figsize=(10,7))
+
+    edge_colors = [G[u][v]['color'] for u, v in G.edges]
+
+    nx.draw(G, pos, with_labels=True, font_weight='bold', node_size=500, node_color='forestgreen', font_color='black', font_size=8, edge_color=edge_colors)
+
+    edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
+
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+    #plt.text(0.2, 0.05, f'MST Distance: {distances[i]:.2f}', horizontalalignment='center', verticalalignment='center', transform=plt.gca().transAxes)
+    plt.title("Graph with MST Highlighted")
+    plt.show()
+
+# Dense Input Case
+def dense_graph(num_vertices):
+    graph = defaultdict(list)
+
+    for i in range(num_vertices):
+        for j in range(i + 1, num_vertices):
+            weight = random.randint(5, 20)  # Random weight between 5 and 20
+            graph[i].append((j, weight))
+            graph[j].append((i, weight))  # Assuming the graph is undirected
+
+    return graph
+
+# Sparse Input Case
+def sparse_graph(num_vertices, avg_degree):
+    graph = defaultdict(list)
+
+    for i in range(num_vertices):
+        neighbors = random.sample(range(i + 1, num_vertices), min(avg_degree, num_vertices - i - 1))
+        for j in neighbors:
+            weight = random.randint(5, 20)  # Random weight between 5 and 20
+            graph[i].append((j, weight))
+            graph[j].append((i, weight))  # Assuming the graph is undirected
+
+    return graph
+
+# Average Input Case
+def average_graph(num_vertices):
+    graph = defaultdict(list)
+
+    for i in range(num_vertices):
+        # Connect to about half of the other nodes
+        num_connections = num_vertices // 2
+        neighbors = random.sample([j for j in range(num_vertices) if j != i], num_connections)
+
+        for j in neighbors:
+            weight = random.randint(1, 20)  # Random weight between 1 and 20
+            graph[i].append((j, weight))
+            graph[j].append((i, weight))  # Assuming the graph is undirected
+
+    return graph
+
+if __name__ == '__main__':
+    vertices = 7
+
+    dense_matrix = dense_graph(vertices)
+    sparse_matrix = sparse_graph(vertices, 3)
+    avg_matrix = average_graph(vertices)
+
+    distance = []
+    num_trials = 1000
+
+    mst_dense, non_mst_dense = kruskal_mst(dense_matrix, distance,1)
+    mst_sparse, non_mst_sparse = kruskal_mst(sparse_matrix, distance,1)
+    mst_avg, non_mst_avg = kruskal_mst(avg_matrix, distance,1)
+
+    time_dense = timeit.timeit(lambda: kruskal_mst(dense_matrix, distance,0), number=num_trials)
+    time_sparse = timeit.timeit(lambda: kruskal_mst(sparse_matrix, distance,0), number=num_trials)
+    time_avg = timeit.timeit(lambda: kruskal_mst(avg_matrix, distance,0), number=num_trials)
+
+    print("Results from Kruskal's Algorithm:")
+    print("MST Distance from Dense:", distance[0])
+    print("MST Distance from Sparse:", distance[1])
+    print("MST Distance of Average Input Graph:", distance[2])
+
+    visualize_graph(dense_matrix, mst_dense, non_mst_dense,distance,0)
+    visualize_graph(sparse_matrix, mst_sparse, non_mst_sparse,distance,1)
+    visualize_graph(avg_matrix, mst_avg, non_mst_avg,distance,2)
+
+      # Plotting the results
+    graph_types = ['Dense', 'Sparse', 'Average']
+    execution_times = [time_dense, time_sparse, time_avg]
+
+    plt.bar(graph_types, execution_times, color=['blue', 'green', 'orange'])
+    plt.xlabel('Graph Type')
+    plt.ylabel('Execution Time (s)')
+    plt.title('Kruskal\'s Algorithm Performance')
+    plt.show()

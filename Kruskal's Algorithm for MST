@@ -54,7 +54,7 @@ def kruskal_mst(graph, distance,i):
             union(parent, rank, x, y)
         else:
             non_mst_edges.append((u, v, w))
-        
+
     total_distance = 0
     for u,v, weight in result:
         total_distance += weight
@@ -63,105 +63,66 @@ def kruskal_mst(graph, distance,i):
         return
     return result, non_mst_edges
 
-def visualize_graph(graph, mst_edges, non_mst_edges,distances,i):
-    G = nx.Graph()
-
-    for u in range(len(graph)):
-        for v, weight in graph[u]:
-            G.add_edge(u, v, weight=weight, color='black')
-
-    # Add MST edges with red color
-    for u, v, weight in mst_edges:
-        G[u][v]['color'] = 'red'
-
-    pos = nx.spring_layout(G)
-    plt.figure(figsize=(10,7))
-
-    edge_colors = [G[u][v]['color'] for u, v in G.edges]
-
-    nx.draw(G, pos, with_labels=True, font_weight='bold', node_size=500, node_color='forestgreen', font_color='black', font_size=8, edge_color=edge_colors)
-
-    edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
-
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
-    #plt.text(0.2, 0.05, f'MST Distance: {distances[i]:.2f}', horizontalalignment='center', verticalalignment='center', transform=plt.gca().transAxes)
-    plt.title("Graph with MST Highlighted")
-    plt.show()
-
-# Dense Input Case
-def dense_graph(num_vertices):
-    graph = defaultdict(list)
-
-    for i in range(num_vertices):
-        for j in range(i + 1, num_vertices):
-            weight = random.randint(5, 20)  # Random weight between 5 and 20
-            graph[i].append((j, weight))
-            graph[j].append((i, weight))  # Assuming the graph is undirected
-
-    return graph
-
-# Sparse Input Case
-def sparse_graph(num_vertices, avg_degree):
-    graph = defaultdict(list)
-
-    for i in range(num_vertices):
-        neighbors = random.sample(range(i + 1, num_vertices), min(avg_degree, num_vertices - i - 1))
-        for j in neighbors:
-            weight = random.randint(5, 20)  # Random weight between 5 and 20
-            graph[i].append((j, weight))
-            graph[j].append((i, weight))  # Assuming the graph is undirected
-
-    return graph
-
-# Average Input Case
-def average_graph(num_vertices):
-    graph = defaultdict(list)
-
-    for i in range(num_vertices):
-        # Connect to about half of the other nodes
-        num_connections = num_vertices // 2
-        neighbors = random.sample([j for j in range(num_vertices) if j != i], num_connections)
-
-        for j in neighbors:
-            weight = random.randint(1, 20)  # Random weight between 1 and 20
-            graph[i].append((j, weight))
-            graph[j].append((i, weight))  # Assuming the graph is undirected
-
-    return graph
-
 if __name__ == '__main__':
-    vertices = 7
-
-    dense_matrix = dense_graph(vertices)
-    sparse_matrix = sparse_graph(vertices, 3)
-    avg_matrix = average_graph(vertices)
 
     distance = []
     num_trials = 1000
 
-    mst_dense, non_mst_dense = kruskal_mst(dense_matrix, distance,1)
-    mst_sparse, non_mst_sparse = kruskal_mst(sparse_matrix, distance,1)
-    mst_avg, non_mst_avg = kruskal_mst(avg_matrix, distance,1)
+    time_d = timeit.timeit(lambda: kruskal_mst(d_input, distance,0), number=num_trials)
+    time_s = timeit.timeit(lambda: kruskal_mst(s_input, distance,0), number=num_trials)
+    time_a = timeit.timeit(lambda: kruskal_mst(a_input, distance,0), number=num_trials)
 
-    time_dense = timeit.timeit(lambda: kruskal_mst(dense_matrix, distance,0), number=num_trials)
-    time_sparse = timeit.timeit(lambda: kruskal_mst(sparse_matrix, distance,0), number=num_trials)
-    time_avg = timeit.timeit(lambda: kruskal_mst(avg_matrix, distance,0), number=num_trials)
+    time_dense = timeit.timeit(lambda: kruskal_mst(dense_graph_input, distance,0), number=num_trials)
+    time_sparse = timeit.timeit(lambda: kruskal_mst(sparse_graph_input, distance,0), number=num_trials)
+    time_avg = timeit.timeit(lambda: kruskal_mst(average_graph_input, distance,0), number=num_trials)
+
+    time_dense = timeit.timeit(lambda: kruskal_mst(dense_input, distance,0), number=num_trials)
+    time_sparse = timeit.timeit(lambda: kruskal_mst(sparse_input, distance,0), number=num_trials)
+    time_avg = timeit.timeit(lambda: kruskal_mst(avgerage_input, distance,0), number=num_trials)
+
+
+    # mst_dense, non_mst_dense = kruskal_mst(d_input, distance,1)
+    # mst_sparse, non_mst_sparse = kruskal_mst(s_input, distance,1)
+    # mst_avg, non_mst_avg = kruskal_mst(a_input, distance,1)
+
+    # visualize_graph(dense_graph_input, mst_dense,total_distance_dense)
+    # visualize_graph(sparse_graph_input, mst_sparse, total_distance_sparse)
+    # visualize_graph(average_graph_input, mst_a, total_distance_average)
 
     print("Results from Kruskal's Algorithm:")
-    print("MST Distance from Dense:", distance[0])
-    print("MST Distance from Sparse:", distance[1])
-    print("MST Distance of Average Input Graph:", distance[2])
+    print("MST Distance from Kruskal's for Dense:", distance[0])
+    print("MST Distance from Kruskal's for Sparse:", distance[1])
+    print("MST Distance from Kruskal's for Average Input Graph:", distance[2])
 
-    visualize_graph(dense_matrix, mst_dense, non_mst_dense,distance,0)
-    visualize_graph(sparse_matrix, mst_sparse, non_mst_sparse,distance,1)
-    visualize_graph(avg_matrix, mst_avg, non_mst_avg,distance,2)
+    print("Execution Time from Kruskal's Dense Graph Input:", time_dense)
+    print("Execution Time from Kruskal's Sparse Graph Input:", time_sparse)
+    print("Execution Time from Kruskal's Average Graph Input:", time_avg)
+    print("Execution Time from Kruskal's Dense Graph Input:", time_ddense)
+    print("Execution Time from Kruskal's Sparse Graph Input:", time_ssparse)
+    print("Execution Time from Kruskal's Average Graph Input:", time_aavg)
+    print("Execution Time from Kruskal's Dense Graph Input:", time_d)
+    print("Execution Time from Kruskal's Sparse Graph Input:", time_s)
+    print("Execution Time from Kruskal's Average Graph Input:", time_a)
 
-      # Plotting the results
     graph_types = ['Dense', 'Sparse', 'Average']
-    execution_times = [time_dense, time_sparse, time_avg]
+    execution_times = [2.322775293999257, 0.2855095290000463, 0.3668741839997165]
+    execution = [5.322775293999257, 0.10059233999931166, 1.6176021359995502]
+    e = [0.0136689060007120133, 0.001643291000116733, 0.0032198349998812773]
+
+    plt.bar(graph_types, e, color=['blue', 'green', 'orange'])
+    plt.xlabel('Graph Type')
+    plt.ylabel('Execution Time (s)')
+    plt.title('Kruskal\'s Algorithm Performance for 7 Vertices')
+    plt.show()
 
     plt.bar(graph_types, execution_times, color=['blue', 'green', 'orange'])
     plt.xlabel('Graph Type')
     plt.ylabel('Execution Time (s)')
-    plt.title('Kruskal\'s Algorithm Performance')
+    plt.title('Kruskal\'s Algorithm Performance for 25 Vertices')
+    plt.show()
+
+    plt.bar(graph_types, execution, color=['blue', 'green', 'orange'])
+    plt.xlabel('Graph Type')
+    plt.ylabel('Execution Time (s)')
+    plt.title('Kruskal\'s Algorithm Performance for 75 Vertices')
     plt.show()
